@@ -1,77 +1,73 @@
-# import
+# -*- coding: UTF-8 -*-
+"""PyBank Homework Solution."""
+
+# Dependencies
 import csv
+import os
 
+# Files to load and output (Remember to change these)
+file_to_load = os.path.join("Resources", "budget_data.csv")
+file_to_output = os.path.join("budget_data_results.txt")
 
-data_csv = "Resources/budget_data.csv"
-output = "Resources/budget_analysis.txt"
-
-# Variables
+# Track various financial parameters
 total_months = 0
-total_revenue = 0
-
-past_revenue = 0
-rev_change = 0
+month_of_change = []
+net_change_list = []
 greatest_increase = ["", 0]
-greatest_decrease = ["", 999999999999999]
+greatest_decrease = ["", 9999999999999999999]
+total_net = 0
 
-rev_changes = []
+# Read the csv and convert it into a list of dictionaries
+with open(file_to_load) as financial_data:
+    reader = csv.reader(financial_data)
 
-# open_data
-with open(data_csv) as revenue_data:
-    reader = csv.DictReader(revenue_data)
+    # Read the header row
+    header = next(reader)
 
-    # Loop through all the rows of data we collect
+    # Extract first row to avoid appending to net_change_list
+    first_row = next(reader)
+    total_months = total_months + 1
+    total_net = total_net + int(first_row[1])
+    prev_net = int(first_row[1])
+
     for row in reader:
 
-        # Calculate the total rev
+        # Track the total
         total_months = total_months + 1
-        total_revenue = total_revenue + int(row["Profit/Losses"])
+        total_net = total_net + int(row[1])
 
-        # Keep track of changes
-        rev_change = int(row["Profit/Losses"]) - past_revenue
-       
+        # Track the net change
+        net_change = int(row[1]) - prev_net
+        prev_net = int(row[1])
+        net_change_list = net_change_list + [net_change]
+        month_of_change = month_of_change + [row[0]]
 
-        # Reset the value of past_revenue to the row I completed my analysis
-        past_revenue = int(row["Profit/Losses"])
-        # print(past_revenue)
+        # Calculate the greatest increase
+        if net_change > greatest_increase[1]:
+            greatest_increase[0] = row[0]
+            greatest_increase[1] = net_change
 
-        # Determine the greatest increase
-        if (rev_change > greatest_increase[1]):
-            greatest_increase[1] = rev_change
-            greatest_increase[0] = row["Date"]
+        # Calculate the greatest decrease
+        if net_change < greatest_decrease[1]:
+            greatest_decrease[0] = row[0]
+            greatest_decrease[1] = net_change
 
-        if (rev_change < greatest_decrease[1]):
-            greatest_decrease[1] = rev_change
-            greatest_decrease[0] = row["Date"]
+# Calculate the Average Net Change
+net_monthly_avg = sum(net_change_list) / len(net_change_list)
 
-        # Add to the rev_changes list
-        rev_changes.append(int(row["Profit/Losses"]))
+# Generate Output Summary
+output = (
+    f"\nFinancial Analysis\n"
+    f"----------------------------\n"
+    f"Total Months: {total_months}\n"
+    f"Total: ${total_net}\n"
+    f"Average  Change: ${net_monthly_avg:.2f}\n"
+    f"Greatest Increase in Profits: {greatest_increase[0]} (${greatest_increase[1]})\n"
+    f"Greatest Decrease in Profits: {greatest_decrease[0]} (${greatest_decrease[1]})\n")
 
-    #average
-    revenue_avg = sum(rev_changes) / len(rev_changes)
-    
+# Print the output (to terminal)
+print(output)
 
-    print()
-    print()
-    print()
-    print("Financial Analysis")
-    print("-------------------------")
-    print("Total Months: " + str(total_months))
-    print("Total Revenue: " + "$" + str(total_revenue))
-    print("Average Change: " + "$" + str(round(sum(rev_changes) / len(rev_changes),2)))
-    print("Greatest Increase: " + str(greatest_increase[0]) + " ($" +  str(greatest_increase[1]) + ")") 
-    print("Greatest Decrease: " + str(greatest_decrease[0]) + " ($" +  str(greatest_decrease[1]) + ")")
-    
-
-
-# Output
-with open(output, "w") as txt_file:
-    txt_file.write("Total Months: " + str(total_months))
-    txt_file.write("\n")
-    txt_file.write("Total Revenue: " + "$" + str(total_revenue))
-    txt_file.write("\n")
-    txt_file.write("Average Change: " + "$" + str(round(sum(rev_changes) / len(rev_changes),2)))
-    txt_file.write("\n")
-    txt_file.write("Greatest Increase: " + str(greatest_increase[0]) + " ($" + str(greatest_increase[1]) + ")") 
-    txt_file.write("\n")
-    txt_file.write("Greatest Decrease: " + str(greatest_decrease[0]) + " ($" + str(greatest_decrease[1]) + ")")
+# Export the results to text file
+with open(file_to_output, "w") as txt_file:
+    txt_file.write(output)
